@@ -4,9 +4,11 @@ import { Button } from '../ui/button';
 import { useGoogleLogin } from '@react-oauth/google';
 import { toast } from 'sonner';
 import { motion } from 'framer-motion';
+import { Menu, X } from 'lucide-react';
 
 function Header() {
   const [user, setUser] = useState(null);
+  const [isMenuOpen, setIsMenuOpen] = useState(false);
 
   useEffect(() => {
     // Check if user is logged in
@@ -29,6 +31,10 @@ function Header() {
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
+
+  const toggleMenu = () => {
+    setIsMenuOpen(!isMenuOpen);
+  };
 
   const login = useGoogleLogin({
     onSuccess: async (tokenResponse) => {
@@ -91,29 +97,22 @@ function Header() {
           AI Travel Planner
         </motion.h1>
       </Link>
-      <nav className="flex items-center gap-2">
+      
+      {/* Desktop Navigation */}
+      <nav className="hidden md:flex items-center gap-2">
         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-          <Link to="/my-trips" className="font-medium text-gray-700 hover:text-teal-500 px-3 py-2 rounded-lg hover:bg-teal-50 transition-all duration-300 relative overflow-hidden group">
-            <span className="relative z-10">My Trips</span>
-            <motion.div 
-              className="absolute inset-0 bg-teal-500 opacity-0 group-hover:opacity-10"
-              initial={{ scale: 0 }}
-              whileHover={{ scale: 1 }}
-              transition={{ duration: 0.3 }}
-            />
+          <Link to="/my-trips" className="font-medium text-gray-700 hover:text-teal-500 px-3 py-2 rounded-lg hover:bg-teal-50 transition-all duration-300">
+            My Trips
           </Link>
         </motion.div>
         <motion.div whileHover={{ scale: 1.05 }} whileTap={{ scale: 0.95 }}>
-          <Link to="/contact-us" className="font-medium text-gray-700 hover:text-teal-500 px-3 py-2 rounded-lg hover:bg-teal-50 transition-all duration-300 relative overflow-hidden group">
-            <span className="relative z-10">Contact Us</span>
-            <motion.div 
-              className="absolute inset-0 bg-teal-500 opacity-0 group-hover:opacity-10"
-              initial={{ scale: 0 }}
-              whileHover={{ scale: 1 }}
-              transition={{ duration: 0.3 }}
-            />
+          <Link to="/contact-us" className="font-medium text-gray-700 hover:text-teal-500 px-3 py-2 rounded-lg hover:bg-teal-50 transition-all duration-300">
+            Contact Us
           </Link>
         </motion.div>
+      </nav>
+
+      <div className="flex items-center gap-3">
         {user ? (
           <motion.div 
             className="flex items-center gap-3"
@@ -155,7 +154,29 @@ function Header() {
             </Button>
           </motion.div>
         )}
-      </nav>
+
+        {/* Mobile Menu Button */}
+        <div className="md:hidden">
+          <button onClick={toggleMenu} className="p-2 rounded-md text-gray-700 hover:bg-gray-100 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-teal-500">
+            {isMenuOpen ? <X size={24} /> : <Menu size={24} />}
+          </button>
+        </div>
+      </div>
+
+      {/* Mobile Navigation Menu */}
+      {isMenuOpen && (
+        <motion.div 
+          className="md:hidden absolute top-full left-0 w-full bg-white shadow-lg py-4"
+          initial={{ opacity: 0, y: -20 }}
+          animate={{ opacity: 1, y: 0 }}
+          exit={{ opacity: 0, y: -20 }}
+        >
+          <nav className="flex flex-col items-center gap-4">
+            <Link to="/my-trips" onClick={toggleMenu} className="font-medium text-gray-700 hover:text-teal-500">My Trips</Link>
+            <Link to="/contact-us" onClick={toggleMenu} className="font-medium text-gray-700 hover:text-teal-500">Contact Us</Link>
+          </nav>
+        </motion.div>
+      )}
     </motion.header>
   );
 }
