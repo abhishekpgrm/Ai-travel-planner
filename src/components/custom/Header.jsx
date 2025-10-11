@@ -83,20 +83,21 @@ function Header() {
       transition={{ duration: 0.6, ease: [0.6, 0.05, 0.01, 0.9] }}
     >
       <div className="max-w-7xl mx-auto flex justify-between items-center">
-        <Link to="/" className="flex items-center gap-3 cursor-pointer group">
+        <Link to="/" className="flex items-center gap-2 sm:gap-3 cursor-pointer group flex-shrink-0">
           <motion.div
             whileHover={{ scale: 1.1, rotate: 5 }}
             whileTap={{ scale: 0.95 }}
             transition={{ duration: 0.3 }}
-            className="relative p-2 rounded-2xl bg-gradient-to-br from-purple-600 to-blue-600 shadow-lg"
+            className="relative p-2 rounded-2xl bg-gradient-to-br from-teal-600 to-emerald-600 shadow-lg"
           >
-            <Plane className="w-6 h-6 text-white" />
+            <Plane className="w-5 h-5 sm:w-6 sm:h-6 text-white" />
           </motion.div>
           <motion.div
             whileHover={{ scale: 1.02 }}
             transition={{ duration: 0.2 }}
+            className="hidden sm:block"
           >
-            <h1 className="font-black text-2xl bg-gradient-to-r from-teal-600 to-emerald-600 bg-clip-text text-transparent">
+            <h1 className="font-black text-xl sm:text-2xl bg-gradient-to-r from-teal-600 to-emerald-600 bg-clip-text text-transparent">
               Wanderlust
             </h1>
             <p className="text-xs text-gray-500 font-medium -mt-1">AI Travel Planner</p>
@@ -131,7 +132,7 @@ function Header() {
           </motion.div>
         </nav>
 
-        <div className="flex items-center gap-4">
+        <div className="flex items-center gap-2 sm:gap-4 flex-shrink-0">
           {user ? (
             <motion.div 
               className="flex items-center gap-4"
@@ -180,7 +181,7 @@ function Header() {
             >
               <Button 
                 onClick={login} 
-                className="bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-xl border-0 rounded-2xl font-bold px-8 py-3 relative overflow-hidden"
+                className="bg-gradient-to-r from-teal-600 to-emerald-600 text-white shadow-xl border-0 rounded-2xl font-bold px-4 sm:px-8 py-2 sm:py-3 relative overflow-hidden text-sm sm:text-base"
               >
                 <span className="relative z-10 flex items-center gap-2">
                   <User className="w-4 h-4" />
