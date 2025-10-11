@@ -3,7 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { collection, query, where, getDocs } from 'firebase/firestore';
 import { db } from '../service/firebase';
 import { motion } from 'framer-motion';
-import { MapPin, Calendar, Plus, Clock, User, DollarSign } from 'lucide-react';
+import { MapPin, Calendar, Plus, Clock, User, DollarSign, Plane, Globe, Heart, Star, ArrowRight } from 'lucide-react';
 import { Button } from '../components/ui/button';
 
 function MyTrips() {
@@ -83,13 +83,21 @@ function MyTrips() {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50 py-12">
-        <div className="container mx-auto px-5 sm:px-10 md:px-20 lg:px-32 xl:px-56">
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50 pt-24 pb-12">
+        <div className="max-w-7xl mx-auto px-6">
           <div className="animate-pulse">
-            <div className="h-8 bg-gray-200 rounded w-32 mb-4"></div>
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="text-center mb-12">
+              <div className="h-12 bg-gray-200 rounded-2xl w-64 mx-auto mb-4"></div>
+              <div className="h-6 bg-gray-200 rounded-xl w-96 mx-auto mb-8"></div>
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} className="bg-gray-200 h-32 rounded-3xl"></div>
+              ))}
+            </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
               {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="bg-gray-200 h-80 rounded-xl"></div>
+                <div key={i} className="bg-gray-200 h-96 rounded-3xl"></div>
               ))}
             </div>
           </div>
@@ -99,64 +107,98 @@ function MyTrips() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 py-12">
-      <div className="container mx-auto px-5 sm:px-10 md:px-20 lg:px-32 xl:px-56">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50 pt-20 sm:pt-24 pb-8 sm:pb-12">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6">
         <motion.div 
           initial="hidden"
           animate="visible"
           variants={containerVariants}
-          className="space-y-8"
+          className="space-y-12"
         >
           {/* Header Section */}
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-            <div>
-              <h1 className="text-4xl font-bold text-gray-800">My Trips</h1>
-              <p className="text-gray-600 mt-2">Your saved travel adventures and itineraries</p>
+          <div className="text-center mb-12">
+            <motion.div
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.8 }}
+            >
+              <div className="inline-flex items-center gap-3 px-6 py-3 rounded-full bg-gradient-to-r from-purple-100 to-blue-100 border border-purple-200 text-sm font-bold text-purple-700 mb-6">
+                <Plane className="w-5 h-5" />
+                Your Travel Collection
+              </div>
+              <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-black text-gray-900 mb-4">
+                My <span className="bg-gradient-to-r from-purple-600 to-blue-600 bg-clip-text text-transparent">Adventures</span>
+              </h1>
+              <p className="text-lg sm:text-xl text-gray-600 max-w-2xl mx-auto mb-6 sm:mb-8 px-4">
+                Relive your journeys and discover new destinations with AI-powered travel planning
+              </p>
               {user && (
-                <div className="flex items-center gap-2 mt-2">
+                <div className="flex items-center justify-center gap-3 mb-8">
                   <img 
                     src={user.picture || '/default-avatar.png'} 
                     alt={user.name} 
-                    className="w-8 h-8 rounded-full object-cover border-2 border-teal-200"
+                    className="w-12 h-12 rounded-full object-cover border-3 border-white shadow-lg"
                     onError={(e) => {
-                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=14b8a6&color=fff&size=32`;
+                      e.target.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.name)}&background=8b5cf6&color=fff&size=48`;
                     }}
                   />
-                  <span className="text-sm text-gray-600">Welcome back, {user.name.split(' ')[0]}!</span>
+                  <div className="text-left">
+                    <div className="font-bold text-gray-900">Welcome back, {user.name.split(' ')[0]}! ✈️</div>
+                    <div className="text-sm text-gray-600">Ready for your next adventure?</div>
+                  </div>
                 </div>
               )}
-            </div>
-            <Link to="/create-trip">
-              <Button className="bg-teal-500 hover:bg-teal-600 flex items-center gap-2 px-6 py-3">
-                <Plus className="h-5 w-5" />
-                Plan New Trip
-              </Button>
-            </Link>
+              <Link to="/create-trip">
+                <motion.button
+                  whileHover={{ scale: 1.05, y: -2 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold px-8 py-4 rounded-2xl shadow-xl hover:shadow-2xl transition-all duration-300 flex items-center gap-3 mx-auto"
+                >
+                  <Plus className="w-5 h-5" />
+                  Plan New Adventure
+                  <ArrowRight className="w-5 h-5" />
+                </motion.button>
+              </Link>
+            </motion.div>
           </div>
 
           {/* Stats Section */}
           {userTrips.length > 0 && (
             <motion.div 
               variants={itemVariants}
-              className="bg-white rounded-xl p-6 shadow-sm"
+              className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-8 sm:mb-12"
             >
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-teal-600">{userTrips.length}</div>
-                  <div className="text-sm text-gray-600">Total Trips</div>
+              <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-8 text-center shadow-xl border border-white/20">
+                <div className="w-16 h-16 bg-gradient-to-r from-purple-600 to-blue-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Plane className="w-8 h-8 text-white" />
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-blue-600">
-                    {userTrips.reduce((acc, trip) => acc + (parseInt(trip.userSelection?.noOfDays) || 0), 0)}
-                  </div>
-                  <div className="text-sm text-gray-600">Days Planned</div>
+                <div className="text-3xl font-black text-gray-900 mb-2">{userTrips.length}</div>
+                <div className="text-gray-600 font-semibold">Total Trips</div>
+              </div>
+              <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-8 text-center shadow-xl border border-white/20">
+                <div className="w-16 h-16 bg-gradient-to-r from-blue-600 to-teal-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Calendar className="w-8 h-8 text-white" />
                 </div>
-                <div className="text-center">
-                  <div className="text-2xl font-bold text-purple-600">
-                    {new Set(userTrips.map(trip => trip.userSelection?.location?.label)).size}
-                  </div>
-                  <div className="text-sm text-gray-600">Destinations</div>
+                <div className="text-3xl font-black text-gray-900 mb-2">
+                  {userTrips.reduce((acc, trip) => acc + (parseInt(trip.userSelection?.noOfDays) || 0), 0)}
                 </div>
+                <div className="text-gray-600 font-semibold">Days Planned</div>
+              </div>
+              <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-8 text-center shadow-xl border border-white/20">
+                <div className="w-16 h-16 bg-gradient-to-r from-teal-600 to-green-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Globe className="w-8 h-8 text-white" />
+                </div>
+                <div className="text-3xl font-black text-gray-900 mb-2">
+                  {new Set(userTrips.map(trip => trip.userSelection?.location?.label)).size}
+                </div>
+                <div className="text-gray-600 font-semibold">Destinations</div>
+              </div>
+              <div className="bg-white/80 backdrop-blur-xl rounded-3xl p-8 text-center shadow-xl border border-white/20">
+                <div className="w-16 h-16 bg-gradient-to-r from-pink-600 to-purple-600 rounded-2xl flex items-center justify-center mx-auto mb-4">
+                  <Heart className="w-8 h-8 text-white" />
+                </div>
+                <div className="text-3xl font-black text-gray-900 mb-2">∞</div>
+                <div className="text-gray-600 font-semibold">Memories</div>
               </div>
             </motion.div>
           )}
@@ -165,16 +207,16 @@ function MyTrips() {
           {userTrips.length > 0 ? (
             <motion.div 
               variants={containerVariants}
-              className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6"
+              className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6"
             >
               {userTrips.map((trip) => (
                 <motion.div key={trip.id} variants={itemVariants}>
                   <Link to={`/view-trip/${trip.id}`}>
                     <motion.div 
-                      whileHover={{ y: -8, scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
+                      whileHover={{ y: -12, scale: 1.03 }}
+                      whileTap={{ scale: 0.97 }}
                       transition={{ type: "spring", stiffness: 400, damping: 25 }}
-                      className="bg-white rounded-xl shadow-sm hover:shadow-xl transition-all duration-300 overflow-hidden group border border-gray-100"
+                      className="bg-white/90 backdrop-blur-xl rounded-3xl shadow-xl hover:shadow-2xl transition-all duration-500 overflow-hidden group border border-white/20"
                     >
                       <div className="relative overflow-hidden">
                         <img 
@@ -186,50 +228,49 @@ function MyTrips() {
                           }}
                         />
                         <div className="absolute inset-0 bg-gradient-to-t from-black/30 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300"></div>
-                        <div className="absolute top-3 right-3 bg-white/95 backdrop-blur-sm px-3 py-1 rounded-full text-xs font-semibold text-gray-700 shadow-sm">
+                        <div className="absolute top-4 right-4 bg-gradient-to-r from-purple-600 to-blue-600 text-white px-4 py-2 rounded-full text-xs font-bold shadow-lg">
                           {trip.userSelection?.budget}
+                        </div>
+                        <div className="absolute top-4 left-4 bg-white/20 backdrop-blur-md text-white px-3 py-1 rounded-full text-xs font-semibold flex items-center gap-1">
+                          <Star className="w-3 h-3 fill-current" />
+                          AI Planned
                         </div>
                         <div className="absolute bottom-3 left-3 text-white opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                           <div className="text-sm font-medium">View Details</div>
                         </div>
                       </div>
-                      <div className="p-6">
-                        <div className="flex items-start justify-between mb-4">
-                          <h3 className="font-bold text-xl text-gray-800 group-hover:text-teal-600 transition-colors line-clamp-2">
-                            {trip.userSelection?.location?.label}
-                          </h3>
-                        </div>
-                        <div className="space-y-3 text-sm text-gray-600">
-                          <div className="flex items-center gap-3">
-                            <Calendar className="h-4 w-4 text-teal-500 flex-shrink-0" />
-                            <span className="font-medium">{trip.userSelection?.noOfDays} Days Trip</span>
+                      <div className="p-8">
+                        <h3 className="font-black text-2xl text-gray-900 group-hover:text-purple-600 transition-colors mb-6 line-clamp-2">
+                          {trip.userSelection?.location?.label}
+                        </h3>
+                        <div className="grid grid-cols-2 gap-4 mb-6">
+                          <div className="bg-gradient-to-r from-purple-50 to-blue-50 rounded-2xl p-4 text-center">
+                            <Calendar className="w-6 h-6 text-purple-600 mx-auto mb-2" />
+                            <div className="font-bold text-gray-900">{trip.userSelection?.noOfDays}</div>
+                            <div className="text-xs text-gray-600">Days</div>
                           </div>
-                          <div className="flex items-center gap-3">
-                            <User className="h-4 w-4 text-blue-500 flex-shrink-0" />
-                            <span>{trip.userSelection?.travelers}</span>
-                          </div>
-                          <div className="flex items-center gap-3">
-                            <DollarSign className="h-4 w-4 text-green-500 flex-shrink-0" />
-                            <span className="capitalize">{trip.userSelection?.budget} Budget</span>
+                          <div className="bg-gradient-to-r from-blue-50 to-teal-50 rounded-2xl p-4 text-center">
+                            <User className="w-6 h-6 text-blue-600 mx-auto mb-2" />
+                            <div className="font-bold text-gray-900 text-sm">{trip.userSelection?.travelers}</div>
+                            <div className="text-xs text-gray-600">Travelers</div>
                           </div>
                         </div>
-                        <div className="mt-6 pt-4 border-t border-gray-100">
+                        <div className="flex items-center justify-between pt-4 border-t border-gray-100">
                           <div className="flex items-center gap-2 text-xs text-gray-500">
-                            <Clock className="h-3 w-3 flex-shrink-0" />
+                            <Clock className="w-4 h-4" />
                             <span>
                               {trip.createdAt ? (
-                                `Created on ${new Date(trip.createdAt).toLocaleDateString('en-US', { 
-                                  year: 'numeric', 
+                                new Date(trip.createdAt).toLocaleDateString('en-US', { 
                                   month: 'short', 
                                   day: 'numeric' 
-                                })} at ${new Date(trip.createdAt).toLocaleTimeString('en-US', { 
-                                  hour: '2-digit', 
-                                  minute: '2-digit' 
-                                })}`
+                                })
                               ) : (
-                                'Created recently'
+                                'Recent'
                               )}
                             </span>
+                          </div>
+                          <div className="text-purple-600 font-semibold text-sm group-hover:text-purple-700 transition-colors">
+                            View Details →
                           </div>
                         </div>
                       </div>
@@ -240,24 +281,30 @@ function MyTrips() {
             </motion.div>
           ) : (
             <motion.div 
-              initial={{ opacity: 0, y: 20 }}
+              initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
-              className="text-center py-20 bg-white rounded-xl shadow-sm"
+              className="text-center py-24 bg-white/80 backdrop-blur-xl rounded-3xl shadow-2xl border border-white/20"
             >
-              <div className="max-w-md mx-auto">
-                <div className="bg-teal-100 w-20 h-20 rounded-full flex items-center justify-center mx-auto mb-6">
-                  <MapPin className="h-10 w-10 text-teal-600" />
+              <div className="max-w-lg mx-auto">
+                <div className="w-32 h-32 bg-gradient-to-r from-purple-600 to-blue-600 rounded-full flex items-center justify-center mx-auto mb-8 shadow-2xl">
+                  <Plane className="w-16 h-16 text-white" />
                 </div>
-                <h3 className="text-2xl font-semibold text-gray-800 mb-3">
-                  No trips yet
+                <h3 className="text-4xl font-black text-gray-900 mb-4">
+                  Your Journey Starts Here
                 </h3>
-                <p className="text-gray-600 mb-8 text-lg">
-                  You haven't created any trips yet. Start planning your next adventure and create unforgettable memories!
+                <p className="text-gray-600 mb-12 text-xl leading-relaxed">
+                  Ready to explore the world? Create your first AI-powered itinerary and discover amazing destinations tailored just for you!
                 </p>
                 <Link to="/create-trip">
-                  <Button className="bg-teal-500 hover:bg-teal-600 px-8 py-3 text-lg">
-                    Plan Your First Trip
-                  </Button>
+                  <motion.button
+                    whileHover={{ scale: 1.05, y: -2 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="bg-gradient-to-r from-purple-600 to-blue-600 text-white font-bold px-12 py-6 rounded-3xl shadow-2xl hover:shadow-3xl transition-all duration-300 text-xl flex items-center gap-3 mx-auto"
+                  >
+                    <Plus className="w-6 h-6" />
+                    Plan Your First Adventure
+                    <ArrowRight className="w-6 h-6" />
+                  </motion.button>
                 </Link>
               </div>
             </motion.div>

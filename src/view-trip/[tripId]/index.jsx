@@ -29,9 +29,94 @@ function ViewTrip() {
         }
     }, [tripId]);
 
+    // Demo trip data
+    const getDemoTrip = () => {
+        return {
+            userSelection: {
+                location: { label: "Paris, France" },
+                noOfDays: "5",
+                budget: "Moderate",
+                travelers: "2 People"
+            },
+            TripData: {
+                location: "Paris, France",
+                locationImageUrl: "https://images.unsplash.com/photo-1502602898536-47ad22581b52?w=800",
+                hotels: [
+                    {
+                        hotelName: "Hotel des Grands Boulevards",
+                        hotelAddress: "17 Boulevard Poissonnière, 75002 Paris",
+                        price: "€120-180/night",
+                        hotelImageUrl: "https://images.unsplash.com/photo-1566073771259-6a8506099945?w=400",
+                        geoCoordinates: "48.8708, 2.3439",
+                        rating: 4.3,
+                        description: "Charming boutique hotel in the heart of Paris with elegant rooms and excellent service."
+                    },
+                    {
+                        hotelName: "Le Marais Hotel",
+                        hotelAddress: "8 Rue des Mauvais Garçons, 75004 Paris",
+                        price: "€90-140/night",
+                        hotelImageUrl: "https://images.unsplash.com/photo-1551882547-ff40c63fe5fa?w=400",
+                        geoCoordinates: "48.8566, 2.3522",
+                        rating: 4.1,
+                        description: "Historic hotel in Le Marais district with traditional French charm."
+                    }
+                ],
+                itinerary: [
+                    {
+                        day: "Day 1",
+                        plan: [
+                            {
+                                placeName: "Eiffel Tower",
+                                placeDetails: "Iconic iron lattice tower and symbol of Paris",
+                                placeImageUrl: "https://images.unsplash.com/photo-1511739001486-6bfe10ce785f?w=400",
+                                geoCoordinates: "48.8584, 2.2945",
+                                ticketPricing: "€29.40",
+                                timeToTravel: "2-3 hours",
+                                rating: 4.6
+                            },
+                            {
+                                placeName: "Seine River Cruise",
+                                placeDetails: "Scenic boat tour along the Seine River",
+                                placeImageUrl: "https://images.unsplash.com/photo-1502602898536-47ad22581b52?w=400",
+                                geoCoordinates: "48.8566, 2.3522",
+                                ticketPricing: "€15",
+                                timeToTravel: "1 hour",
+                                rating: 4.4
+                            }
+                        ]
+                    },
+                    {
+                        day: "Day 2",
+                        plan: [
+                            {
+                                placeName: "Louvre Museum",
+                                placeDetails: "World's largest art museum and historic monument",
+                                placeImageUrl: "https://images.unsplash.com/photo-1566139992930-b159fc2c2ad6?w=400",
+                                geoCoordinates: "48.8606, 2.3376",
+                                ticketPricing: "€17",
+                                timeToTravel: "3-4 hours",
+                                rating: 4.5
+                            }
+                        ]
+                    }
+                ]
+            }
+        };
+    };
+
     // Fetch trip info from Firebase with localStorage fallback
     const GetTripData = async () => {
         setLoading(true);
+        
+        // Handle demo trip
+        if (tripId === 'demo') {
+            setTimeout(() => {
+                setTrip(getDemoTrip());
+                setLoading(false);
+            }, 1000); // Simulate loading
+            return;
+        }
+        
         try {
             // Try Firebase first
             const docRef = doc(db, 'AITrips', tripId);
