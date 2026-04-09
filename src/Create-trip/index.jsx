@@ -1,11 +1,11 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import GooglePlacesAutocomplete from 'react-google-places-autocomplete';
 import { AI_PROMPT, SelectBudegetOptions, SelectTravelersList } from '../constants/options';
 import { Button } from '../components/ui/button';
 import { toast } from 'sonner';
 import { chatSession } from '../service/AIModal';
 import { AiOutlineLoading3Quarters } from "react-icons/ai";
-import { MapPin, Calendar, Wallet, Users, Sparkles, ArrowRight, ArrowLeft, Check, Zap, Globe, Heart } from 'lucide-react';
+import { MapPin, Calendar, Wallet, Users, Sparkles, ArrowRight, ArrowLeft, Check, Zap, Globe, Heart, Plane, Hotel, Utensils, Camera, Star } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Dialog,
@@ -20,12 +20,62 @@ import { useNavigate } from 'react-router-dom';
 import { doc, setDoc } from 'firebase/firestore';
 import { db } from '../service/firebase';
 
+const loadingSteps = [
+  { icon: Globe, label: 'Analyzing destination', color: '#8b5cf6' },
+  { icon: Plane, label: 'Planning your route', color: '#3b82f6' },
+  { icon: Hotel, label: 'Finding best hotels', color: '#06b6d4' },
+  { icon: Utensils, label: 'Curating local experiences', color: '#10b981' },
+  { icon: Camera, label: 'Discovering attractions', color: '#f59e0b' },
+  { icon: Star, label: 'Finalizing your itinerary', color: '#ec4899' },
+];
+
+const loadingMessages = [
+  "Exploring hidden gems in your destination...",
+  "Crafting the perfect day-by-day itinerary...",
+  "Finding the best local restaurants & cafés...",
+  "Discovering must-see attractions...",
+  "Analyzing weather & travel tips...",
+  "Adding insider travel secrets...",
+  "Polishing your dream trip...",
+];
+
 function CreateTrip() {
   const [formData, setFormData] = useState({});
   const [openDialog, setOpenDialog] = useState(false);
   const [loading, setLoading] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const [loadingStepIndex, setLoadingStepIndex] = useState(0);
+  const [loadingMessageIndex, setLoadingMessageIndex] = useState(0);
   const [currentStep, setCurrentStep] = useState(0);
   const navigate = useNavigate();
+
+  useEffect(() => {
+    if (!loading) return;
+    setLoadingProgress(0);
+    setLoadingStepIndex(0);
+    setLoadingMessageIndex(0);
+
+    const progressInterval = setInterval(() => {
+      setLoadingProgress(prev => {
+        if (prev >= 95) { clearInterval(progressInterval); return 95; }
+        return prev + Math.random() * 3;
+      });
+    }, 400);
+
+    const stepInterval = setInterval(() => {
+      setLoadingStepIndex(prev => (prev + 1) % loadingSteps.length);
+    }, 2000);
+
+    const msgInterval = setInterval(() => {
+      setLoadingMessageIndex(prev => (prev + 1) % loadingMessages.length);
+    }, 3000);
+
+    return () => {
+      clearInterval(progressInterval);
+      clearInterval(stepInterval);
+      clearInterval(msgInterval);
+    };
+  }, [loading]);
 
   const steps = [
     { id: 'destination', title: 'Where to?', icon: MapPin, description: 'Choose your dream destination' },
@@ -104,6 +154,24 @@ function CreateTrip() {
     },
   });
 
+  // Retry helper — retries up to maxRetries times on 503 overload errors
+  const sendWithRetry = async (prompt, maxRetries = 3) => {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        return await chatSession.sendMessage(prompt);
+      } catch (err) {
+        const is503 = err.message?.includes('503') || err.message?.includes('high demand') || err.message?.includes('overloaded');
+        if (is503 && attempt < maxRetries) {
+          const waitMs = attempt * 4000; // 4s, 8s, 12s
+          console.warn(`503 overload — retrying in ${waitMs / 1000}s (attempt ${attempt}/${maxRetries})`);
+          await new Promise(res => setTimeout(res, waitMs));
+        } else {
+          throw err;
+        }
+      }
+    }
+  };
+
   const onGenerateTrip = async () => {
     try {
       const user = JSON.parse(localStorage.getItem('user'));
@@ -127,20 +195,28 @@ function CreateTrip() {
         .replace(/{budget}/g, formData.budget);
 
       console.log('Sending prompt to AI...');
-      const result = await chatSession.sendMessage(FINAL_PROMPT);
+      const result = await sendWithRetry(FINAL_PROMPT);
       console.log('AI response received');
       const text = result.response.text();
       console.log('AI response text:', text);
-      
-      const startIndex = text.indexOf('{');
-      const endIndex = text.lastIndexOf('}');
 
-      if (startIndex !== -1 && endIndex !== -1 && endIndex > startIndex) {
-        const jsonString = text.substring(startIndex, endIndex + 1);
-        console.log('Parsing JSON...');
-        const tripData = JSON.parse(jsonString);
+      let tripData;
+      try {
+        // responseMimeType:"application/json" gives clean JSON directly
+        tripData = JSON.parse(text);
+      } catch {
+        // Fallback: extract JSON block if model wrapped it in markdown
+        const startIndex = text.indexOf('{');
+        const endIndex = text.lastIndexOf('}');
+        if (startIndex !== -1 && endIndex !== -1 && endIndex > startIndex) {
+          tripData = JSON.parse(text.substring(startIndex, endIndex + 1));
+        } else {
+          throw new Error("AI returned invalid JSON. Please try again.");
+        }
+      }
+
+      if (tripData) {
         const docId = Date.now().toString();
-        
         const tripDocument = {
           userSelection: formData,
           TripData: tripData,
@@ -148,34 +224,192 @@ function CreateTrip() {
           id: docId,
           createdAt: new Date().toISOString(),
         };
-        
+
         console.log('Saving to Firebase...');
         await setDoc(doc(db, "AITrips", docId), tripDocument);
         console.log('Saved to Firebase successfully');
-        
+
         const existingTrips = JSON.parse(localStorage.getItem('userTrips') || '[]');
         existingTrips.push(tripDocument);
         localStorage.setItem('userTrips', JSON.stringify(existingTrips));
         localStorage.setItem(`trip_${docId}`, JSON.stringify(tripDocument));
-        
+
         console.log('Navigating to trip page...');
         navigate('/view-trip/' + docId);
-      } else {
-        console.error('No valid JSON found in response');
-        toast.error("AI failed to generate a valid trip plan. Please try again.");
       }
     } catch (error) {
       console.error("Detailed error:", error);
       console.error("Error message:", error.message);
-      console.error("Error stack:", error.stack);
-      toast.error(`Error: ${error.message || 'An unexpected error occurred'}`);
+      const is503 = error.message?.includes('503') || error.message?.includes('high demand');
+      if (is503) {
+        toast.error("AI is temporarily overloaded. Please wait a moment and try again.");
+      } else {
+        toast.error(`Error: ${error.message || 'An unexpected error occurred'}`);
+      }
     } finally {
       setLoading(false);
     }
   };
 
+
+  const CurrentLoadingIcon = loadingSteps[loadingStepIndex]?.icon || Globe;
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-purple-50 pt-20 sm:pt-24 pb-8 sm:pb-12">
+      {/* Full-screen loading overlay */}
+      <AnimatePresence>
+        {loading && (
+          <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            transition={{ duration: 0.4 }}
+            className="fixed inset-0 z-50 flex items-center justify-center"
+            style={{
+              background: 'linear-gradient(135deg, #0f0c29 0%, #302b63 50%, #24243e 100%)'
+            }}
+          >
+            {/* Animated background particles */}
+            {[...Array(20)].map((_, i) => (
+              <motion.div
+                key={i}
+                className="absolute rounded-full"
+                style={{
+                  width: Math.random() * 6 + 2,
+                  height: Math.random() * 6 + 2,
+                  left: `${Math.random() * 100}%`,
+                  top: `${Math.random() * 100}%`,
+                  background: `hsl(${Math.random() * 60 + 240}, 80%, 70%)`,
+                }}
+                animate={{
+                  y: [0, -30, 0],
+                  opacity: [0.3, 1, 0.3],
+                  scale: [1, 1.5, 1],
+                }}
+                transition={{
+                  duration: Math.random() * 3 + 2,
+                  repeat: Infinity,
+                  delay: Math.random() * 3,
+                  ease: 'easeInOut',
+                }}
+              />
+            ))}
+
+            <div className="relative z-10 text-center px-6 max-w-lg w-full">
+              {/* Animated globe/icon */}
+              <motion.div
+                className="relative mx-auto mb-10"
+                style={{ width: 140, height: 140 }}
+              >
+                {/* Outer pulsing ring */}
+                <motion.div
+                  className="absolute inset-0 rounded-full"
+                  style={{ background: 'rgba(139, 92, 246, 0.15)', border: '2px solid rgba(139, 92, 246, 0.4)' }}
+                  animate={{ scale: [1, 1.2, 1], opacity: [0.5, 0.1, 0.5] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                />
+                {/* Middle ring */}
+                <motion.div
+                  className="absolute inset-4 rounded-full"
+                  style={{ background: 'rgba(59, 130, 246, 0.15)', border: '2px solid rgba(59, 130, 246, 0.4)' }}
+                  animate={{ scale: [1, 1.15, 1], opacity: [0.5, 0.2, 0.5] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut', delay: 0.3 }}
+                />
+                {/* Icon core */}
+                <motion.div
+                  className="absolute inset-8 rounded-full flex items-center justify-center"
+                  style={{ background: 'linear-gradient(135deg, #8b5cf6, #3b82f6)' }}
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 8, repeat: Infinity, ease: 'linear' }}
+                >
+                  <AnimatePresence mode="wait">
+                    <motion.div
+                      key={loadingStepIndex}
+                      initial={{ opacity: 0, scale: 0.5, rotate: -90 }}
+                      animate={{ opacity: 1, scale: 1, rotate: 0 }}
+                      exit={{ opacity: 0, scale: 0.5, rotate: 90 }}
+                      transition={{ duration: 0.4 }}
+                    >
+                      <CurrentLoadingIcon className="w-9 h-9 text-white" />
+                    </motion.div>
+                  </AnimatePresence>
+                </motion.div>
+              </motion.div>
+
+              {/* Title */}
+              <motion.h2
+                className="text-3xl font-black text-white mb-3"
+                animate={{ opacity: [0.8, 1, 0.8] }}
+                transition={{ duration: 2, repeat: Infinity }}
+              >
+                Building Your{' '}
+                <span style={{ background: 'linear-gradient(90deg, #a78bfa, #60a5fa)', WebkitBackgroundClip: 'text', WebkitTextFillColor: 'transparent' }}>
+                  Dream Trip
+                </span>
+              </motion.h2>
+
+              {/* Cycling step label */}
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={loadingStepIndex}
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  exit={{ opacity: 0, y: -10 }}
+                  transition={{ duration: 0.4 }}
+                  className="text-purple-300 font-semibold text-lg mb-2"
+                >
+                  {loadingSteps[loadingStepIndex]?.label}...
+                </motion.p>
+              </AnimatePresence>
+
+              {/* Cycling message */}
+              <AnimatePresence mode="wait">
+                <motion.p
+                  key={loadingMessageIndex}
+                  initial={{ opacity: 0 }}
+                  animate={{ opacity: 1 }}
+                  exit={{ opacity: 0 }}
+                  transition={{ duration: 0.6 }}
+                  className="text-slate-400 text-sm mb-8"
+                >
+                  {loadingMessages[loadingMessageIndex]}
+                </motion.p>
+              </AnimatePresence>
+
+              {/* Progress bar */}
+              <div className="w-full bg-white/10 rounded-full h-2 mb-6 overflow-hidden">
+                <motion.div
+                  className="h-full rounded-full"
+                  style={{ background: 'linear-gradient(90deg, #8b5cf6, #3b82f6, #06b6d4)' }}
+                  animate={{ width: `${loadingProgress}%` }}
+                  transition={{ duration: 0.5, ease: 'easeOut' }}
+                />
+              </div>
+
+              {/* Step dots */}
+              <div className="flex items-center justify-center gap-3">
+                {loadingSteps.map((step, i) => (
+                  <motion.div
+                    key={i}
+                    className="rounded-full"
+                    style={{
+                      width: i === loadingStepIndex ? 24 : 8,
+                      height: 8,
+                      background: i === loadingStepIndex ? step.color : 'rgba(255,255,255,0.2)',
+                    }}
+                    animate={{ opacity: i === loadingStepIndex ? 1 : 0.4 }}
+                    transition={{ duration: 0.3 }}
+                  />
+                ))}
+              </div>
+
+              <p className="text-slate-500 text-xs mt-6">
+                This may take a few moments — great trips take time ✨
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
       <div className="max-w-4xl mx-auto px-4 sm:px-6">
         {/* Header Section */}
         <motion.div
@@ -530,7 +764,7 @@ function CreateTrip() {
                   >
                     <AiOutlineLoading3Quarters className="w-6 h-6" />
                   </motion.div>
-                  <span>Creating Your Adventure...</span>
+                  <span>Generating...</span>
                 </>
               ) : (
                 <>

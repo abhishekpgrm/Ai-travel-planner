@@ -1,32 +1,53 @@
-import { GoogleGenerativeAI } from "@google/generative-ai";
+import { GoogleGenerativeAI, HarmCategory, HarmBlockThreshold } from "@google/generative-ai";
+
 const apiKey = import.meta.env.VITE_GOOGLE_GEMINI_AI_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey);
 
 const model = genAI.getGenerativeModel({
-  model: "gemini-2.5-flash",
+  model: "gemini-1.5-flash",
+  // Relax safety settings so travel content is never silently blocked
+  safetySettings: [
+    { category: HarmCategory.HARM_CATEGORY_HARASSMENT,        threshold: HarmBlockThreshold.BLOCK_NONE },
+    { category: HarmCategory.HARM_CATEGORY_HATE_SPEECH,       threshold: HarmBlockThreshold.BLOCK_NONE },
+    { category: HarmCategory.HARM_CATEGORY_SEXUALLY_EXPLICIT, threshold: HarmBlockThreshold.BLOCK_NONE },
+    { category: HarmCategory.HARM_CATEGORY_DANGEROUS_CONTENT, threshold: HarmBlockThreshold.BLOCK_NONE },
+  ],
 });
 
 const generationConfig = {
-  temperature: 1,
+  temperature: 0.7,
   topP: 0.95,
   topK: 40,
-  maxOutputTokens: 8192,
+  maxOutputTokens: 16384,      // Enough for a full itinerary JSON
+  responseMimeType: "application/json",  // Forces clean JSON output — no markdown fences
 };
 
-export const chatSession = model.startChat({
-  generationConfig,
-  history: [
-    {
-      role: "user",
-      parts: [
-        {text: "generate Travel Plan for Location : Las Vegas, for 3 Days for Couple with a Cheap budget Give me a Hotels options list with HotelName, Hotel address, Price, hotel image url, geo coordinates, rating, descriptions and suggest itinerary with placeName. Place Details, Place Image Url, Geo Coordinates, ticket Pricing,rating, Time  travel each of the location for 3 days with each day plan with best time to visit in JSON format."},
-      ],
-    },
-    {
-      role: "model",
-      parts: [
-        {text: "Okay, here's a JSON formatted travel plan for a 3-day budget trip to Las Vegas for a couple. This plan focuses on affordable experiences while still enjoying the best of Vegas.\n\n```json\n{\n  \"tripName\": \"Las Vegas Budget Getaway for Two\",\n  \"duration\": \"3 Days\",\n  \"budget\": \"Cheap\",\n    \"travelers\": \"Couple\",\n  \"hotelOptions\": [\n    {\n      \"hotelName\": \"Circus Circus Hotel & Casino\",\n      \"hotelAddress\": \"2880 S Las Vegas Blvd, Las Vegas, NV 89109\",\n       \"price\": \"$40-$80/night\",\n        \"hotelImageUrl\": \"https://media-cdn.tripadvisor.com/media/photo-s/28/93/d3/60/exterior.jpg\",\n      \"geoCoordinates\": {\n        \"latitude\": 36.1373,\n        \"longitude\": -115.1665\n      },\n       \"rating\": 3.7,\n       \"description\": \"An iconic Las Vegas hotel known for its family-friendly atmosphere, featuring a large indoor amusement park and affordable rooms. Offers basic amenities and multiple dining options.\"\n    },\n    {\n      \"hotelName\": \"Excalibur Hotel & Casino\",\n      \"hotelAddress\": \"3850 S Las Vegas Blvd, Las Vegas, NV 89109\",\n      \"price\": \"$50-$90/night\",\n       \"hotelImageUrl\": \"https://media-cdn.tripadvisor.com/media/photo-s/26/19/d3/0f/excalibur-hotel-casino.jpg\",\n      \"geoCoordinates\": {\n        \"latitude\": 36.0987,\n        \"longitude\": -115.1740\n      },\n      \"rating\": 3.9,\n        \"description\": \"A castle-themed hotel on the Strip, offering medieval-style entertainment, several dining choices, and budget-friendly accommodations. Great for a fun and unique experience.\"\n    },\n     {\n      \"hotelName\": \"Tuscany Suites & Casino\",\n      \"hotelAddress\": \"255 E Flamingo Rd, Las Vegas, NV 89169\",\n      \"price\": \"$60-$100/night\",\n      \"hotelImageUrl\": \"https://media-cdn.tripadvisor.com/media/photo-s/25/a6/4b/38/tuscany-suites-casino.jpg\",\n        \"geoCoordinates\": {\n        \"latitude\": 36.1156,\n        \"longitude\": -115.1528\n        },\n       \"rating\": 4.1,\n       \"description\": \"An Italian-themed hotel just off the Strip, providing spacious suites, a relaxed atmosphere, and affordable dining options. Features a pool and a casino.\"\n    }\n  ],\n  \"itinerary\": {\n    \"day1\": {\n      \"theme\": \"Exploring the Strip & Free Attractions\",\n        \"bestTimeToVisit\": \"Morning & Evening\",\n       \"plan\": [\n        {\n          \"placeName\": \"Welcome to Fabulous Las Vegas Sign\",\n           \"placeDetails\": \"An iconic landmark at the south end of the Strip, perfect for a classic Vegas photo.\",\n           \"placeImageUrl\":\"https://media-cdn.tripadvisor.com/media/photo-s/0d/18/2a/ba/welcome-to-fabulous-las.jpg\",\n             \"geoCoordinates\": {\n                \"latitude\": 36.0828,\n                \"longitude\": -115.1722\n                },\n           \"ticketPricing\": \"Free\",\n           \"rating\": 4.6,\n           \"timeToTravel\": \"10-15 mins from most hotels on the Strip\",\n            \"bestTimeToVisit\": \"Morning\"\n\n        },\n        {\n          \"placeName\": \"Bellagio Conservatory & Botanical Gardens\",\n           \"placeDetails\": \"A stunning indoor garden display that changes seasonally, offering a peaceful and beautiful experience.\",\n           \"placeImageUrl\":\"https://media-cdn.tripadvisor.com/media/photo-s/1b/f0/85/5d/bellagio-conservatory-botanical.jpg\",\n             \"geoCoordinates\": {\n               \"latitude\": 36.1129,\n               \"longitude\": -115.1726\n              },\n            \"ticketPricing\": \"Free\",\n          \"rating\": 4.8,\n           \"timeToTravel\": \"Walkable from most Strip hotels\",\n          \"bestTimeToVisit\": \"Anytime during opening hours\"\n        },\n          {\n          \"placeName\": \"Bellagio Fountains Show\",\n           \"placeDetails\": \"Spectacular water show set to music, located in front of the Bellagio Hotel. Catch a show during the day or at night.\",\n           \"placeImageUrl\":\"https://media-cdn.tripadvisor.com/media/photo-s/1b/b7/38/a8/bellagio-fountains.jpg\",\n             \"geoCoordinates\": {\n                \"latitude\": 36.1126,\n                \"longitude\": -115.1738\n              },\n            \"ticketPricing\": \"Free\",\n            \"rating\": 4.7,\n             \"timeToTravel\": \"Walkable from most Strip hotels\",\n              \"bestTimeToVisit\": \"Afternoon or Evening (Check show schedule)\"\n           },\n         {\n          \"placeName\": \"Fremont Street Experience\",\n           \"placeDetails\": \"A pedestrian mall with a massive LED canopy showing light and music shows. Experience the old Vegas charm.\",\n            \"placeImageUrl\":\"https://media-cdn.tripadvisor.com/media/photo-s/1b/b1/75/4d/fremont-street-experience.jpg\",\n           \"geoCoordinates\": {\n                \"latitude\": 36.1700,\n                \"longitude\": -115.1413\n            },\n            \"ticketPricing\": \"Free (some attractions may charge)\",\n            \"rating\": 4.5,\n             \"timeToTravel\": \"15-20 mins by car/rideshare from the Strip\",\n             \"bestTimeToVisit\": \"Evening (for the light show)\"\n        }\n      ]\n    },\n    \"day2\": {\n      \"theme\": \"Affordable Entertainment & Cultural Gems\",\n        \"bestTimeToVisit\": \"Afternoon & Evening\",\n      \"plan\": [\n         {\n          \"placeName\": \"The LINQ Promenade\",\n          \"placeDetails\": \"An outdoor shopping, dining, and entertainment district. Enjoy free street performers and people-watching.\",\n           \"placeImageUrl\":\"https://media-cdn.tripadvisor.com/media/photo-s/11/9f/52/b2/the-linq-promenade.jpg\",\n             \"geoCoordinates\": {\n                \"latitude\": 36.1171,\n               \"longitude\": -115.1699\n            },\n             \"ticketPricing\": \"Free to walk around (charges for some attractions)\",\n             \"rating\": 4.4,\n            \"timeToTravel\":\"Walkable from the Strip\",\n             \"bestTimeToVisit\": \"Afternoon or Evening\"\n        },\n        {\n          \"placeName\": \"High Roller Observation Wheel (Optional)\",\n           \"placeDetails\": \"A giant Ferris wheel offering panoramic views of the city. It's not free, but a great experience if you want to spend a little more.\",\n           \"placeImageUrl\":\"https://media-cdn.tripadvisor.com/media/photo-s/15/2d/f4/ab/high-roller-ferris-wheel.jpg\",\n            \"geoCoordinates\": {\n               \"latitude\": 36.1171,\n              \"longitude\": -115.1694\n             },\n           \"ticketPricing\": \"$25-$40 per person (discounted tickets available online)\",\n           \"rating\": 4.5,\n          \"timeToTravel\":\"Located in the LINQ Promenade\",\n          \"bestTimeToVisit\": \"Evening for sunset views\"\n         },\n\n        {\n          \"placeName\": \"M&M's World\",\n          \"placeDetails\":\"A colorful and fun attraction with M&M's merchandise and displays. Great for a sweet experience.\",\n          \"placeImageUrl\":\"https://media-cdn.tripadvisor.com/media/photo-s/11/2a/66/66/m-m-s-world.jpg\",\n             \"geoCoordinates\": {\n                 \"latitude\": 36.1065,\n                 \"longitude\": -115.1729\n               },\n           \"ticketPricing\": \"Free to enter, cost for purchases\",\n           \"rating\": 4.3,\n            \"timeToTravel\": \"Walkable from most Strip hotels\",\n            \"bestTimeToVisit\": \"Afternoon\"\n\n        },\n       {\n          \"placeName\": \"Las Vegas Strip at Night\",\n           \"placeDetails\": \"Stroll down the Strip to see the amazing lights and vibrant atmosphere. Take in the free shows and attractions.\",\n           \"placeImageUrl\":\"https://media-cdn.tripadvisor.com/media/photo-s/22/c9/c0/a6/the-las-vegas-strip.jpg\",\n             \"geoCoordinates\": {\n               \"latitude\": 36.1098,\n              \"longitude\": -115.1712\n                },\n             \"ticketPricing\":\"Free\",\n           \"rating\": 4.8,\n            \"timeToTravel\": \"Walkable along the strip\",\n            \"bestTimeToVisit\": \"Evening\"\n        }\n      ]\n    },\n    \"day3\": {\n      \"theme\": \"Off-Strip Fun & Departure\",\n        \"bestTimeToVisit\": \"Morning & Early Afternoon\",\n      \"plan\": [\n          {\n          \"placeName\": \"Red Rock Canyon National Conservation Area (Optional)\",\n           \"placeDetails\": \"A scenic desert landscape for hiking and views. Requires a short drive or taxi/rideshare from the Strip.\",\n          \"placeImageUrl\":\"https://media-cdn.tripadvisor.com/media/photo-s/1a/c7/65/2f/red-rock-canyon.jpg\",\n             \"geoCoordinates\": {\n               \"latitude\": 36.1359,\n                \"longitude\": -115.4170\n              },\n              \"ticketPricing\": \"$15 per vehicle (entry fee)\",\n             \"rating\": 4.7,\n             \"timeToTravel\": \"20-30 mins by car/rideshare from the Strip\",\n             \"bestTimeToVisit\": \"Morning\"\n         },\n\n           {\n             \"placeName\": \"Pinball Hall of Fame\",\n            \"placeDetails\": \"A nostalgic arcade with hundreds of pinball machines to play. A fun and affordable activity.\",\n            \"placeImageUrl\": \"https://media-cdn.tripadvisor.com/media/photo-s/08/46/b1/66/pinball-hall-of-fame.jpg\",\n           \"geoCoordinates\": {\n                \"latitude\": 36.0797,\n               \"longitude\": -115.1550\n              },\n          \"ticketPricing\": \"Cost per game (most games are inexpensive)\",\n          \"rating\": 4.6,\n             \"timeToTravel\":\"10-15 mins by car/rideshare from the Strip\",\n              \"bestTimeToVisit\": \"Morning\"\n        },\n\n        {\n          \"placeName\": \"Seven Magic Mountains (Optional)\",\n          \"placeDetails\": \"Colorful art installation in the desert, for taking beautiful pictures if you have time before leaving.\",\n           \"placeImageUrl\": \"https://media-cdn.tripadvisor.com/media/photo-s/12/33/38/9b/seven-magic-mountains.jpg\",\n             \"geoCoordinates\": {\n                \"latitude\": 35.9623,\n                \"longitude\": -115.1998\n               },\n          \"ticketPricing\": \"Free\",\n          \"rating\": 4.5,\n          \"timeToTravel\": \"25-30 mins by car/rideshare from the Strip\",\n          \"bestTimeToVisit\":\"Morning\"\n         },\n        {\n          \"placeName\": \"Departure\",\n           \"placeDetails\": \"Head to the airport for your flight home.\",\n           \"placeImageUrl\": \"https://media-cdn.tripadvisor.com/media/photo-s/16/42/c2/12/las-vegas-mccarran-international.jpg\",\n            \"geoCoordinates\": {\n                \"latitude\": 36.0800,\n                \"longitude\": -115.1522\n              },\n           \"ticketPricing\":\"N/A\",\n           \"rating\":\"N/A\",\n           \"timeToTravel\": \"10-15 mins by car/rideshare from the Strip\",\n             \"bestTimeToVisit\":\"Based on flight schedule\"\n        }\n      ]\n    }\n  }\n}\n```\n**Notes for a Cheap Budget Trip:**\n* **Food:** Look for affordable dining options like buffets, fast food, or casual eateries.\n* **Transportation:** Use public transport (bus) or walk as much as possible. Rideshares and taxis are convenient but can be costly.\n* **Free Activities:** Take advantage of the many free attractions and shows that Vegas has to offer.\n* **Deals and Discounts:** Search for discounted tickets online or through your hotel for attractions.\n\nEnjoy your trip to Las Vegas!\n"},
-      ],
-    },
-  ],
-});
+// Clean single-turn generateContent with retry logic
+export const chatSession = {
+  sendMessage: async (prompt, retries = 3, delay = 2000) => {
+    for (let i = 0; i < retries; i++) {
+      try {
+        const result = await model.generateContent({
+          contents: [{ role: "user", parts: [{ text: prompt }] }],
+          generationConfig,
+        });
+
+        // Surface safety block reason if response is still empty
+        const candidate = result.response?.candidates?.[0];
+        if (!candidate || !candidate.content?.parts?.length) {
+          const reason = candidate?.finishReason || "UNKNOWN";
+          throw new Error(`Gemini returned no content. Finish reason: ${reason}`);
+        }
+
+        return result;
+      } catch (error) {
+        if (i === retries - 1) throw error;
+        if (error.message?.includes('503') || error.message?.includes('high demand')) {
+          await new Promise(resolve => setTimeout(resolve, delay * (i + 1)));
+        } else {
+          throw error;
+        }
+      }
+    }
+  },
+};
