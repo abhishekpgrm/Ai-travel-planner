@@ -4,7 +4,7 @@ const apiKey = import.meta.env.VITE_GOOGLE_GEMINI_AI_API_KEY;
 const genAI = new GoogleGenerativeAI(apiKey);
 
 const model = genAI.getGenerativeModel({
-  model: "gemini-1.5-flash",
+  model: "gemini-pro",
   // Relax safety settings so travel content is never silently blocked
   safetySettings: [
     { category: HarmCategory.HARM_CATEGORY_HARASSMENT,        threshold: HarmBlockThreshold.BLOCK_NONE },
